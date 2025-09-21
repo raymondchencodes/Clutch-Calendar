@@ -38,6 +38,11 @@ def preview_schedule():
         if not line: # skip blank lines
             continue
     
+        if line.startswith("My Dropped/Withdrawn Courses"): # stopping point for the last class
+            if collecting and parseBlock:
+                listOfDictionaries.append(processChunk(parseBlock))
+            break
+
         if line == "Quality Graded Credit": # start block
             collecting = True
             parseBlock = [] # reset for next class
@@ -51,11 +56,8 @@ def preview_schedule():
 
         if collecting: 
             parseBlock.append(line)
-    
-    if collecting and parseBlock: 
-        listOfDictionaries.append(processChunk(parseBlock))
 
     return jsonify(listOfDictionaries)
 
-if __name__ == "__main__": # ensures that block only runs when script is executed directly
+if __name__ == "__main__": # ensures that block only runs when script is executow to calculate CPIed directly
     app.run(debug=True, port=5008)
