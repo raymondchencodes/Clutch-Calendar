@@ -132,7 +132,7 @@ function PopUp({schedule, setOpenPopUp }){
       <ul className="popup-list">
         {schedule.map((course, i) => (
           <li key={i}>
-            <strong>{course.class}</strong><br />
+            <strong>{course.class}</strong><br /> 
             {course.days} | {course.time}<br />
             {course.location}<br />
             {course.startDate} - {course.endDate}
