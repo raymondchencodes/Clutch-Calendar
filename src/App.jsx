@@ -91,7 +91,6 @@ function Form() {
     try {
       const response = await axios.post("http://127.0.0.1:5008/preview", {data: formInput}); 
     
-      // remove response just for testing until parsing is finished
       setSchedule(response.data)
   
       setOpenPopUp(true);
