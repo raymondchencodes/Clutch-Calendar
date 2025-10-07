@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from datetime import datetime
 import re
 
 app = Flask(__name__) 
@@ -74,6 +75,54 @@ def preview_schedule():
             chunkOfClass.append(line) # add the lines to make the class chunk
 
     return jsonify(listOfDictionaries)
+
+def formatForGoogle(classes): # takes a list of classes and converts them into Google Calendar event objets
+    formattedList = []
+
+    for c in classes:
+        startTime, endTime = splitTimeRange(c.get("time",""))
+        startDate = c.get("startDate", "")
+        endDate = c.get("endDate", "")
+
+        event = {
+            "summary": c.get("class", ""),
+            "location": c.get("location", ""),
+            "start": {
+                "dateTime": convertToIsoFormat(startTime, startDate),
+                "timeZone": "America/Chicago"
+            },
+            "end": {
+                "dateTime": convertToIsoFormat(endTime, endDate), 
+                "timeZone": "America/Chicago"
+            },
+            "recurrence": {},
+        }
+        
+        formattedList.append(event)
+
+    return formattedList
+
+def splitTimeRange(timeString):
+    listForStartAndEndTime = []
+
+    for t in timeString.split("-"):
+        listForStartAndEndTime.append(t)
+    
+    if (len(listForStartAndEndTime) == 2):
+        return listForStartAndEndTime[0], listForStartAndEndTime[1]
+    else:
+        return "", ""
+
+def convertToIsoFormat(timeToConvert, dateToConvert): # convert the user-friendly time and date into ISO format for API to read
+    isoTime = convertTimeToIso(timeToConvert)
+    isoDate = converDateToIso(dateToConvert)
+
+    
+    return isoDate + "T" + isoTime + ":00-05:00"
+
+def convertTimeToIso():
+
+def converDateToIso():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5008)
