@@ -115,14 +115,21 @@ def splitTimeRange(timeString):
 
 def convertToIsoFormat(timeToConvert, dateToConvert): # convert the user-friendly time and date into ISO format for API to read
     isoTime = convertTimeToIso(timeToConvert)
-    isoDate = converDateToIso(dateToConvert)
+    isoDate = convertDateToIso(dateToConvert)
 
-    
     return isoDate + "T" + isoTime + ":00-05:00"
 
-def convertTimeToIso():
+def convertTimeToIso(originalTime): # 'HH:MM' format (hours and minutes)
+    cleanUpTime = originalTime.strip().upper().replace(".", "") # clean up string
+    try:
+        timeObject = datetime.strptime(cleanUpTime, "%I:%M %p") # convert string into a datetime object
 
-def converDateToIso():
+        convertObjectToString = timeObject.strftime("%H:%M") # convert datetime object back into string in 24 hour format
+    except ValueError: # if parsing the string into a datetime object doesn't work because of invalid values 
+        return ""
+
+def convertDateToIso(originalDate):
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5008)
