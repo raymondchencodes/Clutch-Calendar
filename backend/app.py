@@ -84,6 +84,10 @@ def formatForGoogle(classes): # takes a list of classes and converts them into G
         startDate = c.get("startDate", "")
         endDate = c.get("endDate", "")
 
+        # convert the list of days into a string for event dictionary
+        googleDaysList = getByDays(c.get("days", "")) 
+        googleDaysString = "".join(googleDaysList)
+
         event = {
             "summary": c.get("class", ""),
             "location": c.get("location", ""),
@@ -92,10 +96,12 @@ def formatForGoogle(classes): # takes a list of classes and converts them into G
                 "timeZone": "America/Chicago"
             },
             "end": {
-                "dateTime": convertToIsoFormat(endTime, endDate), 
+                "dateTime": convertToIsoFormat(endTime, startDate), 
                 "timeZone": "America/Chicago"
             },
-            "recurrence": {},
+            "recurrence": {
+                "RRULE:FREQ=WEEKLY;BYDAY={googleDaysString};UNTIL={convertDateToIso(endDate)}"
+            },
         }
         
         formattedList.append(event)
@@ -117,19 +123,52 @@ def convertToIsoFormat(timeToConvert, dateToConvert): # convert the user-friendl
     isoTime = convertTimeToIso(timeToConvert)
     isoDate = convertDateToIso(dateToConvert)
 
-    return isoDate + "T" + isoTime + ":00-05:00"
+    return isoDate + "T" + isoTime + ":00"
 
-def convertTimeToIso(originalTime): # 'HH:MM' format (hours and minutes)
-    cleanUpTime = originalTime.strip().upper().replace(".", "") # clean up string
+def convertTimeToIso(originalTime): # 'HH:MM' format 
+    cleanUpTime = originalTime.strip().upper().replace(".", "") 
     try:
-        timeObject = datetime.strptime(cleanUpTime, "%I:%M %p") # convert string into a datetime object
+        timeObject = datetime.strptime(cleanUpTime, "%I:%M %p") # convert string into datetime object
 
-        convertObjectToString = timeObject.strftime("%H:%M") # convert datetime object back into string in 24 hour format
-    except ValueError: # if parsing the string into a datetime object doesn't work because of invalid values 
+        convertObjectToString = timeObject.strftime("%H:%M") # convert object back into string in 24 hour format
+        return convertObjectToString 
+    except ValueError: 
         return ""
 
-def convertDateToIso(originalDate):
+def convertDateToIso(originalDate): # 'YYYY-MM-DD' format 
+    try:
+        dateObject = datetime.strptime(originalDate, "%m/%d/%Y")
+        return dateObject.strftime("%Y-%m-%d")
+    except ValueError:
+        return ""
+    
+def getByDays(days):
+    mapForDays = { # abbreviation map for API
+        "Mon": "MO",
+        "Tue": "TU",
+        "Wed": "WE",
+        "Thu": "TH",
+        "Fri": "FR",
+        "Sat": "SA",
+        "Sun": "SU"
+    }
 
+    breakSlashes = days.split("/")
+    cleanedListForDays = []
+
+    for day in breakSlashes: # loop for days of the class
+        cleanUpWhiteSpaces = day.strip()
+
+        if cleanUpWhiteSpaces:
+            cleanedListForDays.append(cleanUpWhiteSpaces) 
+
+    listForDaysGoogle = []
+    for d in cleanedListForDays: # loop for days of the class in Google API format
+        abbreviation = mapForDays.get(d[:3], "") # get abbreviation of the day
+        if abbreviation:
+            listForDaysGoogle.append(abbreviation)
+
+    return listForDaysGoogle
 
 if __name__ == "__main__":
     app.run(debug=True, port=5008)
