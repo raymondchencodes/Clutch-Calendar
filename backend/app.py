@@ -72,7 +72,7 @@ def preview_schedule():
 
         for line in chunkClass: 
             if re.match(section_pattern, line):
-                if current_section: # if we already collected one, save it first
+                if current_section: # if we find a new section, save the previous one
                     sections.append(processChunk(current_section))
                     current_section = []
             current_section.append(line)
@@ -107,7 +107,6 @@ def preview_schedule():
 
     return jsonify(listOfDictionaries)
 
-# everything below is for API
 def formatForGoogle(classes): # takes a list of classes and converts them into Google Calendar event objets
     formattedList = []
 
@@ -121,7 +120,7 @@ def formatForGoogle(classes): # takes a list of classes and converts them into G
         googleDaysString = ",".join(googleDaysList)
 
         event = {
-            "summary": c.get("class", ""),
+            "summary": c.get("class", ""), 
             "location": c.get("location", ""),
             "start": {
                 "dateTime": convertToIsoFormat(startTime, startDate),
@@ -261,11 +260,11 @@ def authorize():
         prompt = "select_account consent" # force account selection screen
     )
 
-    session["state"] = state # save state to session to prevent CSRF attack
+    session["state"] = state # save state to session to prevent CSRF cyber attacks
     session.modified = True 
     return redirect(authorization_url) # redirect user to google's login page
 
-@app.route("/oauth2callback") # route for redirecting from Oauth Screen back to backend 
+@app.route("/oauth2callback") # route for redirecting from Oauth Screen to backend to exchange tokens and create events
 def oauth2callback():
     state = session.get("state") 
     if not state: # check if state from the session matches with the state in URL
@@ -298,7 +297,7 @@ def oauth2callback():
     }
     session.modified = True
 
-    # Now that we have credentials, create the events if schedule was saved
+    # now that we have credentials, create the events if schedule was saved
     if "pending_schedule" in session:
         schedule = session["pending_schedule"]
         
@@ -313,17 +312,17 @@ def oauth2callback():
             except Exception as e:
                 print("Failed to create event:", e)
         
-        # Clear the pending schedule
+        # clear the pending schedule
         session.pop("pending_schedule", None)
         session.modified = True
         
-        # Redirect to Google Calendar after adding events
-        # Get the user's email to redirect to their specific calendar
+        # redirect to Google Calendar after adding events
+        # get the user's email to redirect to their specific calendar
         try:
             calendar_list = service.calendarList().get(calendarId='primary').execute()
             user_email = calendar_list.get('id', '')
     
-        # Redirect to the specific account's calendar
+        # redirect to the specific account's calendar
             if user_email:
                 return redirect(f"https://calendar.google.com/calendar/u/0/r?authuser={user_email}")
             else:
@@ -332,7 +331,7 @@ def oauth2callback():
             print(f"Could not get user email: {e}")
             return redirect("https://calendar.google.com")
 
-    return redirect("http://localhost:3000?auth=success") # redirect back to frontend
+    return redirect("https://clutch-calendar.vercel.app/?auth=success") # redirect back to frontend
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001, host = "localhost")
