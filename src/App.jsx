@@ -89,7 +89,7 @@ function Form() {
 
   const handleSubmit = async () => {
     try {
-      const response = await axios.post("http://127.0.0.1:5008/preview", {data: formInput}); 
+      const response = await axios.post("http://localhost:5001/preview", {data: formInput}); 
     
       setSchedule(response.data)
   
@@ -110,7 +110,7 @@ function Form() {
       
       <br></br>
       
-      <button id = "formButton" onClick ={handleSubmit}> Add </button>
+      <button id = "formButton" onClick ={handleSubmit}> Confirm Schedule </button>
 
       {openPopUp && (
         <PopUp schedule={schedule} setOpenPopUp={setOpenPopUp} />
@@ -121,11 +121,35 @@ function Form() {
 }
 
 function PopUp({schedule, setOpenPopUp }){ 
+
+  const [isDisabled, setIsDisabled] = useState(false);
+
+  const handleAdd = async () => {
+    try {
+      setIsDisabled(true); // Disable the button after click
+      
+      await axios.post("http://localhost:5001/api/saveSchedule", schedule, { withCredentials: true });
+
+      window.location.href = "http://localhost:5001/authorize";
+
+    }catch (error) {
+      console.error("Error sending schedule to Google Calendar: ", error);
+      setIsDisabled(false);
+    }
+  };
+
+  let buttonText; // change button text depending on whether or not the button is disabled
+  if (isDisabled) {
+    buttonText = "Adding...";
+  } else {
+    buttonText = "Add to Google Calendar";
+  }
+
   return (
-     <div className="popUpToConfirm"> 
+    <div className="popUpToConfirm"> 
       <div className="popup-header">
         <h2>Please confirm your schedule.</h2>
-        <button className="close-btn" onClick={() => setOpenPopUp(false)}>X</button>
+        <button id="closeButton" onClick={() => setOpenPopUp(false)}>X</button>
       </div>
 
       <ul className="popup-list">
@@ -138,6 +162,13 @@ function PopUp({schedule, setOpenPopUp }){
           </li>
         ))}
       </ul>
+      
+      <button id="addToCalendarButton" 
+        onClick={handleAdd} 
+        disabled={isDisabled}
+      >
+        {buttonText}
+      </button>
     </div>
   )
 }

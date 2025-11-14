@@ -75,10 +75,10 @@ body {
 }
 
 #formButton{
-  width: 100px;
-  height: 40px;
+  width: 150px;
+  height: 50px;
   background-color: lightcoral;
-  border-radius: 5px;
+  border-radius: 10px;
   margin: 10px;
 }
 
@@ -110,17 +110,27 @@ body {
 
 .popup-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
 }
 
-.close-btn {
-  background: white;
+#closeButton {
+  background: lightgray;
   border: 1px solid black;
+  border-radius: 5px;
+  margin-left:10px;
   padding: 0.25rem 0.5rem;
   cursor: pointer;
 }
 
 .popup-list {
   margin-top: 1rem; 
+}
+
+#addToCalendarButton{
+  width: 200px;
+  height: 50px;
+  background-color: lightgray;
+  border-radius: 10px;
+  margin: 10px;
 }
