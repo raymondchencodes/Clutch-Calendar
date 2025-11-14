@@ -1,12 +1,33 @@
-from flask import Flask, jsonify, request
+from flask import Flask, redirect, request, session, jsonify
 from flask_cors import CORS
 from datetime import datetime
+from googleCalendarHelper import createEvent
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
+from dotenv import load_dotenv
 import re
+import os
+
+load_dotenv()
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # tell OAuth library to allow HTTP
 
 app = Flask(__name__) 
-CORS(app)
+app.secret_key = "random_secret_key"
 
-@app.route("/", methods= ['GET']) 
+app.config.update(
+    SESSION_COOKIE_SAMESITE = "Lax", # controls when browser send the cookie
+    SESSION_COOKIE_SECURE = False  # True only when using HTTPS, not HTTP
+)
+
+CORS(app, supports_credentials=True)
+
+CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
+SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
+
+@app.route("/") 
 def home(): 
     return "Flask server is up and running"
 
@@ -25,13 +46,23 @@ def preview_schedule():
             singlePart = part.strip()
             splitUpDayAndLocation.append(singlePart)
 
+        datePattern = re.compile(r"\d{2}/\d{2}/\d{4}") # find start and end date 
+        listOfDates = []
+    
+        for line in chunk:
+            if re.fullmatch(datePattern, line.strip()):
+                listOfDates.append(line.strip())
+    
+        start_date = listOfDates[0]
+        end_date = listOfDates[1]
+                
         return {
             "class": chunk[0],
             "days": splitUpDayAndLocation[0], 
             "time": splitUpDayAndLocation[1],
             "location": splitUpDayAndLocation[2],
-            "startDate": chunk[-2],
-            "endDate": chunk[-1]
+            "startDate": start_date,
+            "endDate": end_date
         }
     
     def splitSections(chunkClass): # scan through the chunk of course(s) and break up the lectures with subsections
@@ -76,6 +107,7 @@ def preview_schedule():
 
     return jsonify(listOfDictionaries)
 
+# everything below is for API
 def formatForGoogle(classes): # takes a list of classes and converts them into Google Calendar event objets
     formattedList = []
 
@@ -86,7 +118,7 @@ def formatForGoogle(classes): # takes a list of classes and converts them into G
 
         # convert the list of days into a string for event dictionary
         googleDaysList = getByDays(c.get("days", "")) 
-        googleDaysString = "".join(googleDaysList)
+        googleDaysString = ",".join(googleDaysList)
 
         event = {
             "summary": c.get("class", ""),
@@ -99,16 +131,16 @@ def formatForGoogle(classes): # takes a list of classes and converts them into G
                 "dateTime": convertToIsoFormat(endTime, startDate), 
                 "timeZone": "America/Chicago"
             },
-            "recurrence": {
-                "RRULE:FREQ=WEEKLY;BYDAY={googleDaysString};UNTIL={convertDateToIso(endDate)}"
-            },
+            "recurrence": [
+                f"RRULE:FREQ=WEEKLY;BYDAY={googleDaysString};UNTIL={convertDateToIso(endDate).replace('-', '')}T000000Z"
+            ],
         }
         
         formattedList.append(event)
 
     return formattedList
 
-def splitTimeRange(timeString):
+def splitTimeRange(timeString): 
     listForStartAndEndTime = []
 
     for t in timeString.split("-"):
@@ -170,5 +202,137 @@ def getByDays(days):
 
     return listForDaysGoogle
 
+@app.route("/api/google/createEvent", methods=["POST"])
+def create_event():
+    if "credentials" not in session:
+        return jsonify({"error": "Not authorized"}), 401
+
+    creds = Credentials(**session["credentials"]) # converts dict into Credentials objeect
+    service = build("calendar", "v3", credentials=creds) # Creates Google Calendar API client
+
+    rawClasses = request.get_json()
+    formattedClasses = formatForGoogle(rawClasses)
+
+    for event in formattedClasses:
+        try:
+            response = service.events().insert(calendarId="primary", body=event).execute() # create event
+        except Exception as e:
+            print("Failed to create event:", e)
+
+    return jsonify({"message": "Events successfully added!"})
+
+@app.route("/api/saveSchedule", methods=["POST"]) # save schedule before starting OAuth
+def save_schedule():
+    schedule_data = request.get_json()
+    session["pending_schedule"] = schedule_data # saves schedule to the user session
+    session.modified = True
+    return jsonify({"status": "saved"})
+
+@app.route("/api/checkAuth") # route to check if user has valid credentials
+def check_auth():
+    authorized = "credentials" in session
+    return jsonify({"authorized": authorized})
+
+@app.route("/authorize") # route for redirecting to OAuth Screen
+def authorize():
+
+    # clear existing credentials 
+    session.pop("credentials", None)
+    session.modified = True
+
+    flow = Flow.from_client_config( # creates an OAuth flow with user's Google credentials
+        {
+            "web": {
+                "client_id": CLIENT_ID,
+                "client_secret": CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth", # location to Google's login page
+                "token_uri": "https://oauth2.googleapis.com/token", # location to exchange codes for tokens
+                "redirect_uris": [REDIRECT_URI],
+            }
+        },
+        scopes=SCOPES,
+    )
+
+    flow.redirect_uri = REDIRECT_URI # tells Google where to send users after they authorize 
+    
+    # generate authorization url
+    authorization_url, state = flow.authorization_url(
+        access_type = "offline", # get referesh token
+        prompt = "select_account consent" # force account selection screen
+    )
+
+    session["state"] = state # save state to session to prevent CSRF attack
+    session.modified = True 
+    return redirect(authorization_url) # redirect user to google's login page
+
+@app.route("/oauth2callback") # route for redirecting from Oauth Screen back to backend 
+def oauth2callback():
+    state = session.get("state") 
+    if not state: # check if state from the session matches with the state in URL
+        return jsonify({"error": "missing_state"}), 400
+    
+    flow = Flow.from_client_config( # create flow object again
+        {
+            "web": {
+                "client_id": CLIENT_ID,
+                "client_secret": CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [REDIRECT_URI],
+            }
+        },
+        scopes=SCOPES,
+        state=state
+    )
+    flow.redirect_uri = REDIRECT_URI
+    flow.fetch_token(authorization_response=request.url) # exchange authorization code for token
+
+    credentials = flow.credentials # save user credentials to sesssion
+    session["credentials"] = {
+        "token": credentials.token,
+        "refresh_token": credentials.refresh_token,
+        "token_uri": credentials.token_uri,
+        "client_id": credentials.client_id,
+        "client_secret": credentials.client_secret,
+        "scopes": credentials.scopes
+    }
+    session.modified = True
+
+    # Now that we have credentials, create the events if schedule was saved
+    if "pending_schedule" in session:
+        schedule = session["pending_schedule"]
+        
+        creds = Credentials(**session["credentials"])
+        service = build("calendar", "v3", credentials=creds)
+        
+        formattedClasses = formatForGoogle(schedule)
+        
+        for event in formattedClasses:
+            try:
+                response = service.events().insert(calendarId="primary", body=event).execute()
+            except Exception as e:
+                print("Failed to create event:", e)
+        
+        # Clear the pending schedule
+        session.pop("pending_schedule", None)
+        session.modified = True
+        
+        # Redirect to Google Calendar after adding events
+        # Get the user's email to redirect to their specific calendar
+        try:
+            calendar_list = service.calendarList().get(calendarId='primary').execute()
+            user_email = calendar_list.get('id', '')
+    
+        # Redirect to the specific account's calendar
+            if user_email:
+                return redirect(f"https://calendar.google.com/calendar/u/0/r?authuser={user_email}")
+            else:
+                return redirect("https://calendar.google.com")
+        except Exception as e:
+            print(f"Could not get user email: {e}")
+            return redirect("https://calendar.google.com")
+
+    return redirect("http://localhost:3000?auth=success") # redirect back to frontend
+
 if __name__ == "__main__":
-    app.run(debug=True, port=5008)
+    app.run(debug=True, port=5001, host = "localhost")
