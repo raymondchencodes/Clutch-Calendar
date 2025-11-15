@@ -325,9 +325,20 @@ def oauth2callback():
         session.pop("pending_schedule", None)
         session.modified = True
         
-        return redirect("https://calendar.google.com/calendar/u/0/r")
-
-    return redirect("https://clutch-calendar.vercel.app/?auth=success") # redirect back to frontend
+        # redirect to Google Calendar after adding events
+        # get the user's email to redirect to their specific calendar
+        try:
+            calendar_list = service.calendarList().get(calendarId='primary').execute()
+            user_email = calendar_list.get('id', '')
+    
+        # redirect to the specific account's calendar
+            if user_email:
+                return redirect(f"https://calendar.google.com/calendar/u/0/r?authuser={user_email}")
+            else:
+                return redirect("https://calendar.google.com")
+        except Exception as e:
+            print(f"Could not get user email: {e}")
+            return redirect("https://calendar.google.com/calendar/u/0/r")
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001, host = "localhost")
