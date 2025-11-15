@@ -89,8 +89,12 @@ function Form() {
 
   const handleSubmit = async () => {
     try {
-      const response = await axios.post("https://clutch-calendar-backend.onrender.com/preview", {data: formInput}); 
-    
+      const response = await axios.post(
+        "https://clutch-calendar-backend.onrender.com/preview",
+        { data: formInput },           // ← request body
+        { withCredentials: true }      // ← axios config
+      );
+
       setSchedule(response.data)
   
       setOpenPopUp(true);
@@ -128,9 +132,9 @@ function PopUp({schedule, setOpenPopUp }){
     try {
       setIsDisabled(true); // Disable the button after click
       
-      await axios.post("https://clutch-calendar-backend.onrender.com/api/saveSchedule", schedule, { withCredentials: true });
+      const encodedSchedule = encodeURIComponent(JSON.stringify(schedule));
 
-      window.location.href = "https://clutch-calendar-backend.onrender.com/authorize";
+      window.location.href = `https://clutch-calendar-backend.onrender.com/authorize?schedule=${encodedSchedule}`;
 
     }catch (error) {
       console.error("Error sending schedule to Google Calendar: ", error);

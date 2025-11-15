@@ -8,6 +8,7 @@ from google.oauth2.credentials import Credentials
 from dotenv import load_dotenv
 import re
 import os
+import json
 
 load_dotenv()
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # tell OAuth library to allow HTTP
@@ -244,6 +245,17 @@ def check_auth():
 @app.route("/authorize") # route for redirecting to OAuth Screen
 def authorize():
 
+    schedule_param = request.args.get("schedule")
+    if schedule_param:
+        try:
+            schedule_data = json.loads(schedule_param)
+            session["pending_schedule"] = schedule_data
+            session.modified = True
+            print("Saved pending_schedule from query param, count:",
+                  len(schedule_data) if isinstance(schedule_data, list) else "n/a")
+        except Exception as e:
+            print("Failed to parse schedule from query param:", e)
+
     # clear existing credentials 
     session.pop("credentials", None)
     session.modified = True
@@ -325,20 +337,9 @@ def oauth2callback():
         session.pop("pending_schedule", None)
         session.modified = True
         
-        # redirect to Google Calendar after adding events
-        # get the user's email to redirect to their specific calendar
-        try:
-            calendar_list = service.calendarList().get(calendarId='primary').execute()
-            user_email = calendar_list.get('id', '')
-    
-        # redirect to the specific account's calendar
-            if user_email:
-                return redirect(f"https://calendar.google.com/calendar/u/0/r?authuser={user_email}")
-            else:
-                return redirect("https://calendar.google.com")
-        except Exception as e:
-            print(f"Could not get user email: {e}")
-            return redirect("https://calendar.google.com/calendar/u/0/r")
+        return redirect("https://calendar.google.com/calendar/u/0/r")
+
+    return redirect("https://clutch-calendar.vercel.app/?auth=success") # redirect back to frontend
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001, host = "localhost")
