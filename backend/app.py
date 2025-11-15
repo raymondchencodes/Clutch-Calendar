@@ -15,12 +15,21 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # tell OAuth library to allow HT
 app = Flask(__name__) 
 app.secret_key = "random_secret_key"
 
+FRONTEND_ORIGINS = [
+    "https://clutch-calendar.vercel.app",
+    "http://localhost:3000",  # keep this for local dev if you use it
+]
+
 app.config.update(
     SESSION_COOKIE_SAMESITE = "None", # allow cookie to be cross-site
     SESSION_COOKIE_SECURE = True  
 )
 
-CORS(app, supports_credentials=True)
+CORS(
+    app,
+    supports_credentials=True,
+    resources={r"/*": {"origins": FRONTEND_ORIGINS}},
+)
 
 CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -316,20 +325,7 @@ def oauth2callback():
         session.pop("pending_schedule", None)
         session.modified = True
         
-        # redirect to Google Calendar after adding events
-        # get the user's email to redirect to their specific calendar
-        try:
-            calendar_list = service.calendarList().get(calendarId='primary').execute()
-            user_email = calendar_list.get('id', '')
-    
-        # redirect to the specific account's calendar
-            if user_email:
-                return redirect(f"https://calendar.google.com/calendar/u/0/r?authuser={user_email}")
-            else:
-                return redirect("https://calendar.google.com")
-        except Exception as e:
-            print(f"Could not get user email: {e}")
-            return redirect("https://calendar.google.com")
+        return redirect("https://calendar.google.com/calendar/u/0/r")
 
     return redirect("https://clutch-calendar.vercel.app/?auth=success") # redirect back to frontend
 
