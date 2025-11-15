@@ -16,8 +16,8 @@ app = Flask(__name__)
 app.secret_key = "random_secret_key"
 
 app.config.update(
-    SESSION_COOKIE_SAMESITE = "Lax", # controls when browser send the cookie
-    SESSION_COOKIE_SECURE = False  # True only when using HTTPS, not HTTP
+    SESSION_COOKIE_SAMESITE = "None", # allow cookie to be cross-site
+    SESSION_COOKIE_SECURE = True  
 )
 
 CORS(app, supports_credentials=True)
