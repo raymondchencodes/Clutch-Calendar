@@ -196,7 +196,7 @@ function Footer({schedule}){
         <ul class="footer-links">
           <li><a href="https://clutch-calendar.vercel.app/privacy.html" target="blank" >Privacy Policy</a></li>
           <li><a href="https://clutch-calendar.vercel.app/terms.html" target="blank" >Terms of Service</a></li>
-          <li><a href="https://www.linkedin.com/in/raymond-chen-230b16253/" target="blank" >Contact Us</a></li>
+          <li><a href="https://www.linkedin.com/in/raymond-chen-230b16253/" target="blank" >Contact</a></li>
         </ul>
     </div>
   )
