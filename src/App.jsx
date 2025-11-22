@@ -6,10 +6,12 @@ import axios from "axios";
 function App() {
   return (
     <div>
-        <Hero/>
-      <div className = "secondPage">
-        <MainSection/>
-        <Footer/>
+      <Hero />
+      <div className="pageWrapper">
+        <div className="secondPage">
+          <MainSection />
+          <Footer />
+        </div>
       </div>
     </div>
   );
@@ -100,7 +102,7 @@ function Form() {
   const handleSubmit = async () => {
     try {
       const response = await axios.post(
-        "https://clutch-calendar-backend.onrender.com/preview",
+        "http://localhost:5174/preview",
         { data: formInput },
         { withCredentials: false }     
       );
@@ -190,18 +192,12 @@ function PopUp({schedule, setOpenPopUp }){
 function Footer({schedule}){
   return (
     <div className = "footerBox">
-      <p>
-        &copy; 2025{" "}
-        <a
-          href="https://www.linkedin.com/in/raymond-chenn/"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "lightblue" }}
-        >
-          Raymond Chen
-        </a>
-        . All Rights Reserved.
-      </p>
+      <p>&copy; 2024 Raymond Chen. All Rights Reserved.</p>
+        <ul class="footer-links">
+          <li><a href="https://clutch-calendar.vercel.app/privacy.html" target="blank" >Privacy Policy</a></li>
+          <li><a href="https://clutch-calendar.vercel.app/terms.html" target="blank" >Terms of Service</a></li>
+          <li><a href="https://www.linkedin.com/in/raymond-chen-230b16253/" target="blank" >Contact Us</a></li>
+        </ul>
     </div>
   )
 }
