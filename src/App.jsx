@@ -52,10 +52,15 @@ function LeftPanel (){
   return (
     <div className = "leftPanel">
       <h2>Instructions:</h2>
-      <p> 1. Copy everything on the website using command + A or ctrl + A.</p>
-      <p>2. Use Ctrl/Command + SHIFT + V to paste it in the text box!</p>
-      <p>3. Click Add!</p>
-      
+      <p>1. Navigate to your Academics Hub in Workday</p>
+      <p>2. Go to Planning & Registration → Current Classes</p>
+      <p>3. In the semester you want to import, click the Expand icon 
+        (the button with arrows in the upper-right of your enrolled courses)</p>
+      <p>4. Press Command + A (Mac) or Ctrl + A (Windows), 
+        then Command + C / Ctrl + C to select and copy your schedule</p>
+      <p>5. Paste it into the textbox on this page with Command + Shift + V / Ctrl + Shift + V, 
+        then click Confirm Schedule!</p>
+
       <Video />
     </div>
   );
@@ -65,6 +70,11 @@ function RightPanel (){
   return (
     <div className = "rightPanel"> 
       <h2>Try it out!</h2>
+      <p>
+        <strong>Note:</strong> If any of your classes do not have a classroom assigned in Workday, 
+        the schedule cannot be imported. Please wait until all courses have room locations before using Clutch Calendar.
+      </p>
+
       <Form />
     </div>
   )
@@ -74,7 +84,7 @@ function Video() {
   return (
     <div className = "videoSection ratio ratio-16x9">
       <iframe 
-        src="https://www.youtube.com/embed/dQw4w9WgXcQ?si=Fsh7Cq69fhVQYJp8" 
+        src="https://www.loom.com/embed/a00e232d196f4325bdf6f0d239c16f74" 
         title="YouTube video" 
         allowFullScreen></iframe>
     </div>
@@ -91,13 +101,13 @@ function Form() {
     try {
       const response = await axios.post(
         "https://clutch-calendar-backend.onrender.com/preview",
-        { data: formInput },           // ← request body
-        { withCredentials: true }      // ← axios config
+        { data: formInput },
+        { withCredentials: false }     
       );
 
-      setSchedule(response.data)
+      setSchedule(response.data) 
   
-      setOpenPopUp(true);
+      setOpenPopUp(true); 
 
     }catch (error) {
       console.error("Error sending schedule: ", error);
@@ -109,7 +119,7 @@ function Form() {
       <textarea 
         className = "formBox" 
         placeholder = "Paste your schedule here" 
-        onChange = {(event) => setFormInput(event.target.value)}> 
+        onChange = {(event) => setFormInput(event.target.value)}>
       </textarea> {/*event hook updates the form input with whatever is typed/pasted */}
       
       <br></br>
@@ -180,7 +190,18 @@ function PopUp({schedule, setOpenPopUp }){
 function Footer({schedule}){
   return (
     <div className = "footerBox">
-      <p>&copy; 2025 Raymond Chen. All Rights Reserved.</p>
+      <p>
+        &copy; 2025{" "}
+        <a
+          href="https://www.linkedin.com/in/raymond-chenn/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "lightblue" }}
+        >
+          Raymond Chen
+        </a>
+        . All Rights Reserved.
+      </p>
     </div>
   )
 }

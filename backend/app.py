@@ -18,7 +18,7 @@ app.secret_key = "random_secret_key"
 
 FRONTEND_ORIGINS = [
     "https://clutch-calendar.vercel.app",
-    "http://localhost:3000",  # keep this for local dev if you use it
+    "http://localhost:5174",  
 ]
 
 app.config.update(
@@ -95,11 +95,6 @@ def preview_schedule():
         line = line.strip()
         if not line: 
             continue
-    
-        if line.startswith("My Dropped/Withdrawn Courses"): # stopping point for the last class
-            if collecting and chunkOfClass: 
-                listOfDictionaries.extend(splitSections(chunkOfClass))
-            break
 
         if line == "Quality Graded Credit": # start block
             collecting = True
@@ -114,6 +109,9 @@ def preview_schedule():
 
         if collecting: 
             chunkOfClass.append(line) # add the lines to make the class chunk
+        
+    if collecting and chunkOfClass:
+        listOfDictionaries.extend(splitSections(chunkOfClass))
 
     return jsonify(listOfDictionaries)
 
