@@ -39,7 +39,17 @@ SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 
 @app.route("/") 
 def home(): 
-    return "Flask server is up and running"
+    return """
+    <html>
+      <head>
+        <meta name="google-site-verification" content="I0LH9tL1wbiHjQ1nVIxZGQBXKNFHv8hp8I2KKNQgfGs"/>
+      </head>
+
+      <body>
+        Flask server is up and running.
+      </body>
+    </html>
+    """
 
 @app.route("/preview", methods= ['POST']) 
 def preview_schedule():
