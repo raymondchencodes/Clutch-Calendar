@@ -86,7 +86,7 @@ function Video() {
   return (
     <div className = "videoSection ratio ratio-16x9">
       <iframe 
-        src="https://www.loom.com/embed/a00e232d196f4325bdf6f0d239c16f74" 
+        src="https://www.youtube.com/embed/CtNjWVzR92I" 
         title="YouTube video" 
         allowFullScreen></iframe>
     </div>
