@@ -1,8 +1,25 @@
-# React + Vite
+# 🗓️ Clutch Calendar
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Clutch Calendar is a full-stack web app that automatically converts a student’s WashU Workday course schedule into a clean, organized Google Calendar.
 
-Currently, two official plugins are available:
+**Try it out at: https://clutch-calendar.vercel.app/**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Features
+
+* Parse course schedules from Workday
+* Authenticate securely using Google OAuth 2.0
+* Automatically create events in Google Calendar
+* Clean and user-friendly UI built with React + Vite
+
+## Tech Stack
+* Frontend: React (Vite), Axios
+* Backend: Flask (Python)
+* API: Google Calendar API
+* Deployment: Vercel, Render/Fly.io
+
+## License
+This project is licensed under the [MIT License](LICENSE).
+
+## 📬 Contact
+* Created by [Raymond Chen](https://www.linkedin.com/in/raymond-chenn/)
+* Feel free to reach out for questions or collaboration!
